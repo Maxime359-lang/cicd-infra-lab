@@ -47,3 +47,9 @@ curl -sS https://cicd-gitlab.${PUB_IP}.nip.io/health
 - `nginx/cicd.conf.tpl` – vhost template for both hosts
 - `scripts/apply-nginx.sh` – installs/updates nginx config and reloads nginx
 - `scripts/enable-https.sh` – issues Let's Encrypt certs and configures renewal
+
+## Related repos
+- GitHub app (SSM + OIDC deploy): `prod-automation-lab`
+- GitLab app (GitLab CI + SSH deploy + rollback): `devops-flask-ci-cd`
+
+This repo acts as the gateway (Nginx + HTTPS) for both apps.
