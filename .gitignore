@@ -1,0 +1,50 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+.eggs/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Virtualenv ----
+.venv/
+venv/
+ENV/
+env/
+
+# ---- Jupyter ----
+.ipynb_checkpoints/
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+
+# ---- Editors / IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- Secrets / local env ----
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ---- Logs ----
+*.log
+
+# ---- Terraform (if you add IaC later) ----
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
