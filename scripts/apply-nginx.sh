@@ -16,7 +16,7 @@ echo "  http://cicd-gitlab.${PUB_IP}.nip.io"
 
 # 2) Render template locally
 TMP_CONF="$(mktemp)"
-sed "s/<EC2_IP>//g" nginx/cicd.conf.tpl > "$TMP_CONF"
+sed "s/<EC2_IP>/${PUB_IP}/g" nginx/cicd.conf.tpl > "$TMP_CONF"
 
 # 3) Install & start nginx (idempotent)
 ssh "${SSH_OPTS[@]}" "${EC2_USER}@${EC2_HOST}" <<'SSH'

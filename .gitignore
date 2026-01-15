@@ -48,3 +48,5 @@ Thumbs.db
 *.tfstate
 *.tfstate.*
 crash.log
+
+repo_dump_*.txt
