@@ -3,6 +3,7 @@ name: Deploy Nginx Gateway (SSM + OIDC)
 on:
   push:
     branches: ["main"]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -14,7 +15,8 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
     steps:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -25,7 +27,7 @@ jobs:
       - name: Deploy via SSM Run Command
         env:
           SHA: ${{ github.sha }}
-          REPO: ${{ github.repository }}
+          PUB_IP: "18.198.208.36"
         run: |
           set -euo pipefail
 
@@ -37,26 +39,16 @@ jobs:
             --output text \
             --parameters commands="[
               \"set -euo pipefail\",
-
               \"sudo dnf install -y nginx curl >/dev/null 2>&1 || true\",
               \"sudo mkdir -p /var/www/letsencrypt\",
-              \"sudo mkdir -p /opt/cicd-gateway\",
-
-              \"sudo curl -fsSL https://raw.githubusercontent.com/${REPO}/${SHA}/nginx/cicd.conf.tpl -o /opt/cicd-gateway/cicd.conf.tpl\",
-              \"sudo curl -fsSL https://raw.githubusercontent.com/${REPO}/${SHA}/scripts/smoke.sh -o /opt/cicd-gateway/smoke.sh\",
-              \"sudo chmod +x /opt/cicd-gateway/smoke.sh\",
-
-              \"TOKEN=\\$(curl -sS -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')\",
-              \"PUB_IP=\\$(curl -sS -H 'X-aws-ec2-metadata-token: \\$TOKEN' http://169.254.169.254/latest/meta-data/public-ipv4)\",
-
-              \"sudo sed 's/<EC2_IP>/\\$PUB_IP/g' /opt/cicd-gateway/cicd.conf.tpl | sudo tee /etc/nginx/conf.d/cicd.conf >/dev/null\",
+              \"sudo curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${SHA}/nginx/cicd.conf.tpl -o /tmp/cicd.conf.tpl\",
+              \"sed 's/<EC2_IP>/${PUB_IP}/g' /tmp/cicd.conf.tpl | sudo tee /etc/nginx/conf.d/cicd.conf >/dev/null\",
               \"sudo nginx -t\",
               \"sudo systemctl enable --now nginx\",
               \"sudo systemctl reload nginx\",
-
-              \"/opt/cicd-gateway/smoke.sh https://cicd-github.\\$PUB_IP.nip.io/health\",
-              \"/opt/cicd-gateway/smoke.sh https://cicd-gitlab.\\$PUB_IP.nip.io/health\",
-
+              \"sudo curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${SHA}/scripts/smoke-nginx.sh -o /tmp/smoke-nginx.sh\",
+              \"sudo chmod +x /tmp/smoke-nginx.sh\",
+              \"bash -lc '/tmp/smoke-nginx.sh ${PUB_IP}'\",
               \"echo OK\"
             ]")
 
