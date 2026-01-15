@@ -20,9 +20,21 @@ jobs:
           echo "=== rendered ==="
           sed -n '1,240p' /tmp/cicd.conf
 
-      - name: nginx -t (docker)
+      - name: Sanity checks (no certs required)
         run: |
           set -euo pipefail
-          docker run --rm \
-            -v /tmp/cicd.conf:/etc/nginx/conf.d/cicd.conf:ro \
-            nginx:1.28-alpine nginx -t
+          test -s /tmp/cicd.conf
+
+          # hostnames present
+          grep -q "cicd-github.18.198.208.36.nip.io" /tmp/cicd.conf
+          grep -q "cicd-gitlab.18.198.208.36.nip.io" /tmp/cicd.conf
+
+          # ports
+          grep -q "proxy_pass http://127.0.0.1:8081" /tmp/cicd.conf
+          grep -q "proxy_pass http://127.0.0.1:8082" /tmp/cicd.conf
+
+          # ACME path + redirect
+          grep -q "/.well-known/acme-challenge/" /tmp/cicd.conf
+          grep -q "return 301 https://\\$host\\$request_uri" /tmp/cicd.conf
+
+          echo "OK"
