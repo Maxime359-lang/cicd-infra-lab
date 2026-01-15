@@ -46,9 +46,10 @@ jobs:
               \"sudo nginx -t\",
               \"sudo systemctl enable --now nginx\",
               \"sudo systemctl reload nginx\",
-              \"sudo curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${SHA}/scripts/smoke-nginx.sh -o /tmp/smoke-nginx.sh\",
-              \"sudo chmod +x /tmp/smoke-nginx.sh\",
-              \"bash -lc '/tmp/smoke-nginx.sh ${PUB_IP}'\",
+              \"sudo curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${SHA}/scripts/smoke.sh -o /tmp/smoke.sh",
+              \"sudo chmod +x /tmp/smoke.sh",
+              \"bash -lc '/tmp/smoke.sh http://cicd-github.${PUB_IP}.nip.io/health'\",
+              \"bash -lc '/tmp/smoke.sh http://cicd-gitlab.${PUB_IP}.nip.io/health'\",
               \"echo OK\"
             ]")
 
