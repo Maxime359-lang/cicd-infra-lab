@@ -1,0 +1,28 @@
+name: CI (nginx config lint)
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render nginx config (local)
+        run: |
+          set -euo pipefail
+          export EC2_HOST="18.198.208.36"   # placeholder tylko do składni
+          sed "s/<EC2_IP>/${EC2_HOST}/g" nginx/cicd.conf.tpl > /tmp/cicd.conf
+
+          echo "=== rendered ==="
+          sed -n '1,240p' /tmp/cicd.conf
+
+      - name: nginx -t (docker)
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v /tmp/cicd.conf:/etc/nginx/conf.d/cicd.conf:ro \
+            nginx:1.28-alpine nginx -t
