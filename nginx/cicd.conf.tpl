@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name cicd-github.__PUB_IP__.nip.io;
+    server_name cicd-github.<EC2_IP>.nip.io;
 
     location / {
         proxy_pass http://127.0.0.1:8081;
@@ -13,7 +13,7 @@ server {
 
 server {
     listen 80;
-    server_name cicd-gitlab.__PUB_IP__.nip.io;
+    server_name cicd-gitlab.<EC2_IP>.nip.io;
 
     location / {
         proxy_pass http://127.0.0.1:8082;
