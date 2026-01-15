@@ -48,8 +48,8 @@ jobs:
               \"systemctl reload nginx\",
               \"curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${SHA}/scripts/smoke.sh -o /tmp/smoke.sh\",
               \"chmod +x /tmp/smoke.sh\",
-              \"bash -lc '/tmp/smoke.sh http://cicd-github.${PUB_IP}.nip.io/health'\",
-              \"bash -lc '/tmp/smoke.sh http://cicd-gitlab.${PUB_IP}.nip.io/health'\",
+              \"bash -lc '/tmp/smoke.sh https://cicd-github.${PUB_IP}.nip.io/health'\",
+              \"bash -lc '/tmp/smoke.sh https://cicd-gitlab.${PUB_IP}.nip.io/health'\",
               \"echo OK\"
             ]")
 

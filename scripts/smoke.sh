@@ -14,7 +14,7 @@ max=30
 sleep_s=2
 
 while true; do
-  if curl -fsS "${URL}" >/dev/null; then
+  if curl -fsS -L --max-time 3 --connect-timeout 2 "${URL}" >/dev/null; then
     echo "SMOKE_OK url=${URL}"
     exit 0
   fi

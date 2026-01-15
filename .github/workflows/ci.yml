@@ -35,6 +35,5 @@ jobs:
 
           # ACME path + redirect
           grep -q "/.well-known/acme-challenge/" /tmp/cicd.conf
-          grep -q "return 301 https://\\$host\\$request_uri" /tmp/cicd.conf
-
+          grep -q 'return 301 https://$host$request_uri' /tmp/cicd.conf
           echo "OK"
