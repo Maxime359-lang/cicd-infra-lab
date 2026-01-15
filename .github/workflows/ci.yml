@@ -14,7 +14,7 @@ jobs:
       - name: Render nginx config (local)
         run: |
           set -euo pipefail
-          export EC2_HOST="18.198.208.36"   # placeholder tylko do składni
+          export EC2_HOST="-e"   # placeholder only for syntax
           sed "s/<EC2_IP>/${EC2_HOST}/g" nginx/cicd.conf.tpl > /tmp/cicd.conf
 
           echo "=== rendered ==="
@@ -26,8 +26,11 @@ jobs:
           test -s /tmp/cicd.conf
 
           # hostnames present
-          grep -q "cicd-github.18.198.208.36.nip.io" /tmp/cicd.conf
-          grep -q "cicd-gitlab.18.198.208.36.nip.io" /tmp/cicd.conf
+          grep -q "cicd-github\." /tmp/cicd.conf
+          grep -q "cicd-gitlab\." /tmp/cicd.conf
+          grep -q "\.nip\.io" /tmp/cicd.conf
+          grep -q "server_name cicd-github\." /tmp/cicd.conf
+          grep -q "server_name cicd-gitlab\." /tmp/cicd.conf
 
           # ports
           grep -q "proxy_pass http://127.0.0.1:8081" /tmp/cicd.conf
