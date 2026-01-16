@@ -1,66 +1,54 @@
-# CICD Infra Lab (Nginx Reverse Proxy + HTTPS + nip.io)
+# CICD Infra Lab — Nginx Reverse Proxy Gateway + HTTPS (Let's Encrypt) + nip.io
 
-This repo configures an EC2 host as a **reverse proxy gateway** for two demo apps running on the same machine:
+This repo is the gateway layer for two demo apps running on the same EC2 host:
+- GitHub-deployed app:  cicd-github.<EC2_IP>.nip.io  -> 127.0.0.1:8081
+- GitLab-deployed app:  cicd-gitlab.<EC2_IP>.nip.io  -> 127.0.0.1:8082
 
-- GitHub-deployed app: `cicd-github.<EC2_IP>.nip.io` → `127.0.0.1:8081`
-- GitLab-deployed app: `cicd-gitlab.<EC2_IP>.nip.io` → `127.0.0.1:8082`
+It provides:
+- single public entrypoint (80/443)
+- TLS termination (Let's Encrypt) + auto-renew
+- reverse proxy routing to localhost-only apps
 
-## Live demo
-Replace `<EC2_IP>` with your EC2 public IPv4:
-- https://cicd-github.<EC2_IP>.nip.io/health
-- https://cicd-gitlab.<EC2_IP>.nip.io/health
-
-Example:
+Live demo (current EC2):
 - https://cicd-github.18.198.208.36.nip.io/health
 - https://cicd-gitlab.18.198.208.36.nip.io/health
 
-## What this repo does
-- Renders nginx vhost template (`nginx/cicd.conf.tpl`) using EC2 public IP
-- Deploys nginx config to EC2 via **SSM Run Command** (GitHub Actions OIDC)
-- Runs smoke checks
+## Architecture
+On EC2 both apps run in containers but bind to localhost only:
+- prod-automation-lab -> 127.0.0.1:8081
+- devops-flask-ci-cd  -> 127.0.0.1:8082
 
-## Prerequisites on EC2
-- Amazon Linux 2023
-- SSM agent working
-- Security Group:
-  - inbound: **80/tcp**, **443/tcp**
-  - (optional) **22/tcp** only from your IP, or keep SSH closed and use SSM
-  - do **NOT** expose **8081/8082** publicly
-- Two apps already running on localhost only:
-  - GitHub app: `127.0.0.1:8081`
-  - GitLab app: `127.0.0.1:8082`
+Nginx is the only public-facing component:
+Internet -> Nginx (80/443) -> localhost containers (8081/8082)
 
-## Deploy (GitHub Actions)
-Workflow: `.github/workflows/deploy-ec2.yml`
+## Recruiter highlights
+- Reverse proxy gateway with 2 vhosts (nip.io) on one EC2 IP
+- HTTP -> HTTPS redirect (301)
+- Let's Encrypt (ACME webroot) + certbot auto-renew (systemd timer)
+- Security headers baseline: HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy
+- Deploy pinned to commit SHA (reproducible config)
+- Smoke tests with retries
 
-Required secrets:
-- `AWS_DEPLOY_ROLE_ARN`
-- `AWS_EC2_INSTANCE_ID`
+## Repo structure
+- nginx/cicd.conf.tpl        : nginx config template with <EC2_IP> placeholder
+- scripts/smoke.sh           : retry-based smoke test (used in CI/deploy)
+- .github/workflows/*.yml    : lint + deploy workflow(s)
 
-Required repo variable:
-- `EC2_PUBLIC_IP` = your EC2 public IPv4 (example: `18.198.208.36`)
+## Verify (from anywhere)
+PUB_IP="18.198.208.36"
 
-## Verify
-~~~bash
-PUB_IP="<EC2_PUBLIC_IP>"
-curl -sS https://cicd-github.${PUB_IP}.nip.io/health
-curl -sS https://cicd-gitlab.${PUB_IP}.nip.io/health
-~~~
+# redirect
+curl -sSI http://cicd-github.${PUB_IP}.nip.io/health | egrep -i 'HTTP/|location'
+curl -sSI http://cicd-gitlab.${PUB_IP}.nip.io/health | egrep -i 'HTTP/|location'
 
-## Troubleshooting
+# health
+curl -sS https://cicd-github.${PUB_IP}.nip.io/health; echo
+curl -sS https://cicd-gitlab.${PUB_IP}.nip.io/health; echo
 
-### 502 Bad Gateway
-Check upstream:
-~~~bash
-curl -sS http://127.0.0.1:8081/health
-curl -sS http://127.0.0.1:8082/health
-docker ps
-sudo tail -n 50 /var/log/nginx/error.log
-~~~
+# security headers
+curl -sSI https://cicd-github.${PUB_IP}.nip.io/health | egrep -i 'strict-transport|x-content-type|x-frame|referrer|server'
+curl -sSI https://cicd-gitlab.${PUB_IP}.nip.io/health | egrep -i 'strict-transport|x-content-type|x-frame|referrer|server'
 
-### invalid server name "cicd-github..nip.io"
-Happens when EC2 IP rendered as empty. Ensure repo variable `EC2_PUBLIC_IP` is set.
-
-## Related repos
-- GitHub app (SSM + OIDC deploy): `prod-automation-lab`
-- GitLab app (GitLab CI + SSH deploy + rollback): `devops-flask-ci-cd`
+## Related repos (apps behind this gateway)
+- prod-automation-lab  (GitHub Actions -> GHCR -> EC2 via SSM/OIDC)
+- devops-flask-ci-cd   (GitLab CI -> EC2 via SSH + rollback + Trivy)
